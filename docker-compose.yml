@@ -1,0 +1,21 @@
+version: "3"
+
+services:
+  bitcoind:
+    image: lncm/bitcoind:v24.0.1
+    container_name: bitcoin
+    restart: unless-stopped
+    volumes:
+      - ./bitcoin_data:/data
+    ports:
+      - "8332:8332"
+      - "8333:8333"
+    command:
+      -printtoconsole
+      -server=1
+      -rpcuser=bitcoin
+      -rpcpassword=bitcoin
+      -rpcbind=0.0.0.0
+      -rpcallowip=0.0.0.0/0
+      -datadir=/data
+      -txindex=1
