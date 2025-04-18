@@ -1,0 +1,20 @@
+Get first block
+bitcoin-cli -rpcuser=bitcoin -rpcpassword=bitcoin getblockhash 0
+
+Get Genesis
+bitcoin-cli -rpcuser=bitcoin -rpcpassword=bitcoin getblock 000000000019d6689c085ae165831e934ff763ae46a2a6c172b3f1b60a8ce26f 2
+
+
+curl --user bitcoin:bitcoin --data-binary '{
+  "jsonrpc":"1.0",
+  "id":"curltest",
+  "method":"getblockhash",
+  "params":[2]
+}' -H 'content-type:text/plain;' http://localhost:8332/
+
+curl --user bitcoin:bitcoin --data-binary '{
+  "jsonrpc":"1.0",
+  "id":"curltest",
+  "method":"getblock",
+  "params":["000000000019d6689c085ae165831e934ff763ae46a2a6c172b3f1b60a8ce26f", 2]
+}' -H 'content-type:text/plain;' http://localhost:8332/

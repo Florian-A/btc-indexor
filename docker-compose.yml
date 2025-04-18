@@ -2,20 +2,22 @@ version: "3"
 
 services:
   bitcoind:
-    image: lncm/bitcoind:v24.0.1
-    container_name: bitcoin
+    build: ./docker/bitcoind
+    container_name: bitcoind
     restart: unless-stopped
     volumes:
-      - ./bitcoin_data:/data
+      - ./data:/data
+      - ./docker/bitcoind/bitcoin.conf:/data/.bitcoin/bitcoin.conf
     ports:
       - "8332:8332"
       - "8333:8333"
-    command:
-      -printtoconsole
-      -server=1
-      -rpcuser=bitcoin
-      -rpcpassword=bitcoin
-      -rpcbind=0.0.0.0
-      -rpcallowip=0.0.0.0/0
-      -datadir=/data
-      -txindex=1
+
+  indexer:
+    build: ./docker/indexer
+    container_name: indexer
+    working_dir: /app
+    volumes:
+      - ./srcs/indexer:/app
+    ports:
+      - "4000:4000"
+    restart: unless-stopped
