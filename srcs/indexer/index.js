@@ -1,5 +1,7 @@
 // index.js
 
+import { MongoClient } from "mongodb";
+
 class BitcoinRPCClient {
   constructor({ url, username, password }) {
     this.url = url;
@@ -57,7 +59,7 @@ class BitcoinRPCClient {
   }
 }
 
-// ---------- Utilisation ----------
+// ---------- Utilisation avec MongoDB ----------
 
 const client = new BitcoinRPCClient({
   url: "http://bitcoind:8332/",
@@ -65,19 +67,38 @@ const client = new BitcoinRPCClient({
   password: "bitcoin"
 });
 
-(async () => {
+// Connexion MongoDB
+const mongoUrl = "mongodb://admin:1234@mongodb:27017/bitcoin?authSource=admin";
+const dbName = "bitcoin";
+const collectionName = "blocks";
+
+const run = async () => {
+  const mongoClient = new MongoClient(mongoUrl);
+
   try {
-    const max = 1000; // Ou await client.getBlockCount();
+    await mongoClient.connect();
+    const db = mongoClient.db(dbName);
+    const blocks = db.collection(collectionName);
+
+    const max = 10; // ou await client.getBlockCount();
 
     for (let i = 0; i < max; i++) {
       const block = await client.getBlockByHeight(i);
-      console.log(`📦 Bloc ${i}`);
-      console.dir(block, { depth: null });
-      console.log("\n---\n");
+
+      // Insert or update the block (upsert to avoid duplicates)
+      await blocks.updateOne(
+        { hash: block.hash },
+        { $set: block },
+        { upsert: true }
+      );
     }
 
-    console.log("✅ Terminé !");
+    console.log("✅ Blocs insérés dans MongoDB !");
   } catch (err) {
-    console.error("❌ Erreur :", err.message);
+    console.error("❌ Erreur MongoDB ou RPC :", err.message);
+  } finally {
+    await mongoClient.close();
   }
-})();
+};
+
+run();

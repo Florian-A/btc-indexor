@@ -6,7 +6,7 @@ services:
     container_name: bitcoind
     restart: unless-stopped
     volumes:
-      - ./data:/data
+      - ./data/bitcoind:/data
       - ./docker/bitcoind/bitcoin.conf:/data/.bitcoin/bitcoin.conf
     ports:
       - "8332:8332"
@@ -20,4 +20,16 @@ services:
       - ./srcs/indexer:/app
     ports:
       - "4000:4000"
+    restart: unless-stopped
+
+  mongodb:
+    build: ./docker/mongodb
+    container_name: mongodb
+    ports:
+      - "27017:27017"
+    volumes:
+      - ./data/mongodb:/data/db
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: admin
+      MONGO_INITDB_ROOT_PASSWORD: 1234
     restart: unless-stopped
