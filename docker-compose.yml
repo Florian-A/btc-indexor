@@ -18,6 +18,14 @@ services:
     working_dir: /app
     volumes:
       - ./srcs/indexer:/app
+    restart: unless-stopped
+
+  backend:
+    build: ./docker/backend
+    container_name: backend
+    working_dir: /app
+    volumes:
+      - ./srcs/backend:/app
     ports:
       - "4000:4000"
     restart: unless-stopped
