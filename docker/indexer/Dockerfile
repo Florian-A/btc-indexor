@@ -2,6 +2,8 @@ FROM node:22
 
 WORKDIR /app
 
-RUN if [ -f package.json ]; then npm install; fi
+COPY . /app/
+
+RUN npm install
 
 CMD ["node", "index.js"]
