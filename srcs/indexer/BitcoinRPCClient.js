@@ -37,7 +37,6 @@ export class BitcoinRPCClient {
       const hash = await this.call("getblockhash", [height]);
       const block = await this.call("getblock", [hash, verbosity]);
       block.decodeCoinbase = this.decodeCoinbase(block);
-      
       return block;
     }
 
@@ -48,14 +47,14 @@ export class BitcoinRPCClient {
   
     // Decode the coinbase transaction hex to ASCII
     decodeCoinbase(block) {
+    
       const coinbaseTx = block?.tx?.[0];
       const coinbaseInput = coinbaseTx?.vin?.[0];
   
       if (coinbaseInput?.coinbase) {
         const hex = coinbaseInput.coinbase;
         const decoded = Buffer.from(hex, "hex").toString("ascii");
-        coinbaseInput.coinbase_ascii = decoded;
-        return coinbaseInput?.coinbase_ascii;
+        return decoded;
       } else {
         return null;
       }

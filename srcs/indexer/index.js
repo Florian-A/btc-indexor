@@ -33,7 +33,7 @@ const run = async () => {
 
     await progressCollection.updateOne(
       { _id: PROGRESS_ID },
-      { $setOnInsert: { value: 1 } },
+      { $setOnInsert: { value: 0 } },
       { upsert: true }
     );
 
@@ -71,3 +71,7 @@ const run = async () => {
 setTimeout(() => {
   run();
 }, 10000);
+
+setTimeout(() => {
+  console.log("⏹️ Stopping process...");
+}, 100000);
