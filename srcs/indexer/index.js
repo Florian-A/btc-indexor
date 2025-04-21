@@ -1,104 +1,73 @@
 // index.js
 
+import "dotenv/config";
 import { MongoClient } from "mongodb";
+import { BitcoinRPCClient } from "./BitcoinRPCClient.js";
 
-class BitcoinRPCClient {
-  constructor({ url, username, password }) {
-    this.url = url;
-    this.authHeader =
-      "Basic " + Buffer.from(`${username}:${password}`).toString("base64");
-  }
-
-  async call(method, params = []) {
-    const payload = {
-      jsonrpc: "1.0",
-      id: "js-client",
-      method,
-      params
-    };
-
-    const response = await fetch(this.url, {
-      method: "POST",
-      headers: {
-        "Content-Type": "text/plain",
-        "Authorization": this.authHeader
-      },
-      body: JSON.stringify(payload)
-    });
-
-    const data = await response.json();
-
-    if (data.error) {
-      throw new Error(data.error.message);
-    }
-
-    return data.result;
-  }
-
-  async getBlockByHeight(height, verbosity = 2) {
-    const hash = await this.call("getblockhash", [height]);
-    const block = await this.call("getblock", [hash, verbosity]);
-
-    this.decodeCoinbase(block);
-    return block;
-  }
-
-  decodeCoinbase(block) {
-    const coinbaseTx = block?.tx?.[0];
-    const coinbaseInput = coinbaseTx?.vin?.[0];
-
-    if (coinbaseInput?.coinbase) {
-      const hex = coinbaseInput.coinbase;
-      const decoded = Buffer.from(hex, "hex").toString("ascii");
-      coinbaseInput.coinbase_ascii = decoded;
-    }
-  }
-
-  async getBlockCount() {
-    return await this.call("getblockcount");
-  }
-}
-
-// ---------- Utilisation avec MongoDB ----------
+const {
+  BITCOIN_RPC_URL,
+  BITCOIN_RPC_USER,
+  BITCOIN_RPC_PASS,
+  MONGO_URL,
+  MONGO_DB_NAME,
+  MONGO_COLLECTION_NAME,
+  PROGRESS_ID,
+  MAX_PROGRESS,
+} = process.env;
 
 const client = new BitcoinRPCClient({
-  url: "http://bitcoind:8332/",
-  username: "bitcoin",
-  password: "bitcoin"
+  url: BITCOIN_RPC_URL,
+  username: BITCOIN_RPC_USER,
+  password: BITCOIN_RPC_PASS
 });
 
-// Connexion MongoDB
-const mongoUrl = "mongodb://admin:1234@mongodb:27017/bitcoin?authSource=admin";
-const dbName = "bitcoin";
-const collectionName = "blocks";
-
 const run = async () => {
-  const mongoClient = new MongoClient(mongoUrl);
+  const mongoClient = new MongoClient(MONGO_URL);
 
   try {
     await mongoClient.connect();
-    const db = mongoClient.db(dbName);
-    const blocks = db.collection(collectionName);
 
-    const max = 10; // ou await client.getBlockCount();
+    const db = mongoClient.db(MONGO_DB_NAME);
+    const blocks = db.collection(MONGO_COLLECTION_NAME);
+    const progressCollection = db.collection("progress");
 
-    for (let i = 0; i < max; i++) {
+    await progressCollection.updateOne(
+      { _id: PROGRESS_ID },
+      { $setOnInsert: { value: 1 } },
+      { upsert: true }
+    );
+
+    const currentProgress = await progressCollection.findOne({ _id: PROGRESS_ID });
+    if (currentProgress.value >= MAX_PROGRESS) {
+      console.log(`⏹️ Limit reached. No processing done.`);
+      return;
+    }
+
+    for (let i = currentProgress.value; i < MAX_PROGRESS; i++) {
       const block = await client.getBlockByHeight(i);
 
-      // Insert or update the block (upsert to avoid duplicates)
+      console.log(`📦 Sync block #${i} : ${block.hash}`);
+
       await blocks.updateOne(
         { hash: block.hash },
         { $set: block },
         { upsert: true }
       );
+
+      await progressCollection.updateOne(
+        { _id: PROGRESS_ID },
+        { $set: { value: i + 1 } }
+      );
     }
 
-    console.log("✅ Blocs insérés dans MongoDB !");
+    console.log("✅ Indexing finished");
   } catch (err) {
-    console.error("❌ Erreur MongoDB ou RPC :", err.message);
+    console.error("❌ Error MongoDB or RPC :", err.message);
   } finally {
     await mongoClient.close();
   }
 };
 
-run();
+setTimeout(() => {
+  run();
+}, 10000);
