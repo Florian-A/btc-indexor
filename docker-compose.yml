@@ -30,15 +30,15 @@ services:
       - "4000:4000"
     restart: unless-stopped
 
-  frontend:
-    build: ./docker/frontend
-    container_name: frontend
-    working_dir: /app
-    volumes:
-      - ./srcs/frontend:/app
-    ports:
-      - "5173:8000"
-    restart: unless-stopped
+  # frontend:
+  #   build: ./docker/frontend
+  #   container_name: frontend
+  #   working_dir: /app
+  #   volumes:
+  #     - ./srcs/frontend:/app
+  #   ports:
+  #     - "5173:8000"
+  #   restart: unless-stopped
 
   mongodb:
     build: ./docker/mongodb

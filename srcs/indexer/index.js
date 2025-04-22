@@ -1,5 +1,3 @@
-// index.js
-
 import "dotenv/config";
 import { MongoClient } from "mongodb";
 import { BitcoinRPCClient } from "./BitcoinRPCClient.js";
@@ -74,4 +72,4 @@ setTimeout(() => {
 
 setTimeout(() => {
   console.log("⏹️ Stopping process...");
-}, 100000);
+}, 10000);

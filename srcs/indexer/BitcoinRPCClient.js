@@ -1,3 +1,6 @@
+import crypto from "crypto";
+import bs58check from "bs58check";
+
 export class BitcoinRPCClient {
     constructor({ url, username, password }) {
       this.url = url;
@@ -36,7 +39,7 @@ export class BitcoinRPCClient {
     async getBlockByHeight(height, verbosity = 2) {
       const hash = await this.call("getblockhash", [height]);
       const block = await this.call("getblock", [hash, verbosity]);
-      block.decodeCoinbase = this.decodeCoinbase(block);
+      block.coinBaseAddress = this.getCoinbaseAddressFromBlockObject(block);
       return block;
     }
 
@@ -44,19 +47,41 @@ export class BitcoinRPCClient {
     async getBlockCount() {
         return await this.call("getblockcount");
     }
-  
-    // Decode the coinbase transaction hex to ASCII
-    decodeCoinbase(block) {
-    
-      const coinbaseTx = block?.tx?.[0];
-      const coinbaseInput = coinbaseTx?.vin?.[0];
-  
-      if (coinbaseInput?.coinbase) {
-        const hex = coinbaseInput.coinbase;
-        const decoded = Buffer.from(hex, "hex").toString("ascii");
-        return decoded;
-      } else {
-        return null;
+
+    descToAddress(desc) {
+      if (!desc || !desc.startsWith("pk(")) {
+        throw new Error("Invalid or missing scriptPubKey.desc");
       }
+    
+      const pubKeyHex = desc.match(/^pk\(([0-9a-fA-F]+)\)/)?.[1];
+      if (!pubKeyHex) {
+        throw new Error("Public key not found in desc");
+      }
+    
+      const pubKeyBuffer = Buffer.from(pubKeyHex, "hex");
+      const sha256 = crypto.createHash("sha256").update(pubKeyBuffer).digest();
+      const ripemd160 = crypto.createHash("ripemd160").update(sha256).digest();
+      const payload = Buffer.concat([Buffer.from([0x00]), ripemd160]);
+    
+      return bs58check.encode(payload);
+    }
+  
+    getCoinbaseAddressFromBlockObject(block) {
+      const coinbaseTx = block?.tx?.[0];
+    
+      if (!coinbaseTx || !coinbaseTx.vout || coinbaseTx.vout.length === 0) {
+        throw new Error("Coinbase transaction or output not found");
+      }
+    
+      const desc = coinbaseTx.vout[0]?.scriptPubKey?.desc;
+    
+      if (!desc || !desc.startsWith("pk(")) {
+        throw new Error("Invalid or missing scriptPubKey.desc");
+      }
+      
+      const address = this.descToAddress(desc);
+
+      console.log(`Coinbase address: ${address}`);
+      return address;
     }
   }
