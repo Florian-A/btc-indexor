@@ -2,8 +2,8 @@ FROM node:22
 
 WORKDIR /app
 
-COPY . /app/
+COPY . . 
 
-RUN npm install
-
+RUN npm i
+\
 CMD ["npm", "run", "dev"]
