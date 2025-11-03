@@ -2,10 +2,8 @@ FROM node:22
 
 WORKDIR /app
 
-COPY . /app/
+COPY ./srcs/backend /app/
 
-RUN rm -rf package-lock.json node_modules && npm install
-
-RUN npm install
+RUN npm i
 
 CMD ["node", "index.js"]

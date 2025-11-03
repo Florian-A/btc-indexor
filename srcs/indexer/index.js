@@ -22,6 +22,10 @@ const client = new BitcoinRPCClient({
 const run = async () => {
   const mongoClient = new MongoClient(MONGO_URL);
 
+  // const block = await client.getBlockByHeight(170);
+  // console.log(`📦 Test block : ${block.hash}`);
+  // return ;
+
   try {
     await mongoClient.connect();
 

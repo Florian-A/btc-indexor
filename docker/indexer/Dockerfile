@@ -2,8 +2,8 @@ FROM node:22
 
 WORKDIR /app
 
-COPY . .
+COPY ./srcs/indexer /app
 
-RUN npm install
+RUN npm i
 
 CMD ["node", "index.js"]

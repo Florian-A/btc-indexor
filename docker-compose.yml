@@ -2,7 +2,9 @@ version: "3"
 
 services:
   bitcoind:
-    build: ./docker/bitcoind
+    build:
+      context: .
+      dockerfile: docker/bitcoind/Dockerfile
     container_name: bitcoind
     restart: unless-stopped
     volumes:
@@ -13,7 +15,9 @@ services:
       - "8333:8333"
 
   indexer:
-    build: ./docker/indexer
+    build:
+      context: .
+      dockerfile: docker/indexer/Dockerfile
     container_name: indexer
     working_dir: /app
     volumes:
@@ -21,7 +25,9 @@ services:
     restart: unless-stopped
 
   backend:
-    build: ./docker/backend
+    build:
+      context: .
+      dockerfile: docker/backend/Dockerfile
     container_name: backend
     working_dir: /app
     volumes:
@@ -30,15 +36,17 @@ services:
       - "4000:4000"
     restart: unless-stopped
 
-  # frontend:
-  #   build: ./docker/frontend
-  #   container_name: frontend
-  #   working_dir: /app
-  #   volumes:
-  #     - ./srcs/frontend:/app
-  #   ports:
-  #     - "5173:8000"
-  #   restart: unless-stopped
+  frontend:
+    build:
+      context: .
+      dockerfile: docker/frontend/Dockerfile
+    container_name: frontend
+    working_dir: /app
+    volumes:
+      - ./srcs/frontend:/app
+    ports:
+      - "5173:8000"
+    restart: unless-stopped
 
   mongodb:
     build: ./docker/mongodb
